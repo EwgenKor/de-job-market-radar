@@ -2,7 +2,7 @@
 
 ## Overview
 
-Job Market Analytics Pipeline is a Data Engineering portfolio project focused on collecting, processing, and analyzing job postings for Data Engineering roles.
+Job Market Analytics Pipeline is a Data Engineering project focused on collecting, processing, and analyzing job postings for Data Engineering roles.
 
 The project extracts job data from public APIs, stores raw responses, normalizes job fields, extracts technical skills, and prepares the data for further analytics.
 
