@@ -8,6 +8,7 @@ from pathlib import Path
 import pandas as pd
 import requests
 from dotenv import load_dotenv
+from src.quality import run_quality_checks, filter_required_fields
 
 
 load_dotenv()
@@ -137,15 +138,6 @@ def normalize_jobs(data: dict) -> pd.DataFrame:
         )
     df = pd.DataFrame(normalize_jobs)
 
-    if df["title"].isna().sum() > 0:
-        print(f"WARNING: {df["title"].isna().sum()} jobs without title")
-
-    if df["url"].isna().sum() > 0:
-        print(f"WARNING: {df["url"].isna().sum()} jobs without url")
-
-    df = df[df["title"].notna()]
-    df = df[df["url"].notna()]
-
     return df
 
 
@@ -166,6 +158,10 @@ def main():
     save_raw_json(data)
 
     df = normalize_jobs(data)
+
+    run_quality_checks(df)
+    df = filter_required_fields(df)
+
     save_processed_csv(df)
 
     print(df[["title", "company", "location", "remote", "tags", "skills"]].head())
