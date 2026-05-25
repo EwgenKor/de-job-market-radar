@@ -1,4 +1,3 @@
-from urllib import response
 
 import json
 import os
@@ -8,7 +7,17 @@ from pathlib import Path
 import pandas as pd
 import requests
 from dotenv import load_dotenv
-from src.quality import run_quality_checks, filter_required_fields
+from src.utils.quality import run_quality_checks, filter_required_fields
+
+import logging
+
+
+logging.basicConfig(
+    level=logging.INFO,
+    format="%(asctime)s | %(levelname)s | %(name)s | %(message)s",
+)
+
+logger = logging.getLogger(__name__)
 
 
 load_dotenv()
@@ -36,8 +45,8 @@ SKILL_KEYWORDS = {
 }
 
 
-def fetch_job():
-    response = requests.get(API_URL)
+def fetch_jobs():
+    response = requests.get(API_URL, timeout=30)
     response.raise_for_status()
     data = response.json()
     return data
@@ -53,10 +62,10 @@ def save_raw_json(data: dict):
     with open(file_path, "w") as f:
         json.dump(data, f, indent=2, ensure_ascii=False)
 
-    print(f"Saved raw data to {file_path}")
+    logger.info("Saved raw data to %s", file_path)
 
 
-def safe_get(value,default=None):
+def safe_get(value, default=None):
     if value is None:
         return default
 
@@ -150,11 +159,11 @@ def save_processed_csv(df: pd.DataFrame) -> None:
 
     df.to_csv(file_path, index=False, encoding="utf-8")
 
-    print(f"Saved processed data to {file_path}")
+    logger.info("Saved processed data to %s", file_path)
 
 
 def main():
-    data = fetch_job()
+    data = fetch_jobs()
     save_raw_json(data)
 
     df = normalize_jobs(data)
@@ -164,8 +173,8 @@ def main():
 
     save_processed_csv(df)
 
-    print(df[["title", "company", "location", "remote", "tags", "skills"]].head())
-    print(df.shape)
+    logger.debug("Sample normalized jobs:\n%s", df[["title", "company", "location", "remote", "tags", "skills"]].head())
+    logger.info("Normalized jobs DataFrame shape: %s", df.shape)
 
 
 if __name__ == "__main__":

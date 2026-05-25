@@ -1,6 +1,10 @@
-from multiprocessing.reduction import duplicate
+
+import logging
 
 import pandas as pd
+
+
+logger = logging.getLogger(__name__)
 
 
 def run_quality_checks(df: pd.DataFrame) -> None:
@@ -8,15 +12,15 @@ def run_quality_checks(df: pd.DataFrame) -> None:
     missing_urls = df["url"].isna().sum()
     duplicate_urls = df["url"].duplicated().sum()
 
-    empty_skills = df["skill"].apply(len).eq(0).sum()
+    empty_skills = df["skills"].apply(len).eq(0).sum()
 
-    print("\nDATA QUALITY REPORT")
-    print("-" * 30)
 
-    print(f"Missing titles: {missing_titles}")
-    print(f"Missing urls: {missing_urls}")
-    print(f"Duplicate urls: {duplicate_urls}")
-    print(f"Jobs without skills: {empty_skills}")
+    logger.info("Missing titles: %s", missing_titles)
+    logger.info("Missing urls: %s", missing_urls)
+    logger.info("Jobs without skills: %s", empty_skills)
+
+    if duplicate_urls >0:
+        logger.warning("Duplicate urls: %s", duplicate_urls)
 
 
 def filter_required_fields(df: pd.DataFrame) -> pd.DataFrame:
