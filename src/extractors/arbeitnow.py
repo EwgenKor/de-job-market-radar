@@ -30,19 +30,44 @@ if not API_URL:
 
 
 SKILL_KEYWORDS = {
-    "python": ["python"],
-    "sql": ["sql", "postgresql", "postgres", "mysql"],
+    "python": ["python", "python3"],
+    "sql": ["sql"],
+    "postgres": ["postgres", "postgresql"],
+    "mysql": ["mysql"],
+    "mongodb": ["mongodb", "mongo"],
+    "redis": ["redis"],
+
     "airflow": ["airflow", "apache airflow"],
+    "dbt": ["dbt"],
     "spark": ["spark", "apache spark", "pyspark"],
     "kafka": ["kafka", "apache kafka"],
-    "dbt": ["dbt"],
+    "flink": ["flink", "apache flink"],
+
     "aws": ["aws", "amazon web services"],
-    "gcp": ["gcp", "google cloud"],
+    "gcp": ["gcp", "google cloud", "google cloud platform"],
     "azure": ["azure"],
+
     "docker": ["docker"],
     "kubernetes": ["kubernetes", "k8s"],
+    "terraform": ["terraform"],
+
     "clickhouse": ["clickhouse"],
-    "postgres": ["postgres", "postgresql"],
+    "snowflake": ["snowflake"],
+    "bigquery": ["bigquery", "google bigquery"],
+    "redshift": ["redshift", "amazon redshift"],
+    "databricks": ["databricks"],
+
+    "linux": ["linux"],
+    "bash": ["bash", "shell scripting"],
+    "git": ["git", "github", "gitlab"],
+
+    "pandas": ["pandas"],
+    "numpy": ["numpy"],
+
+    "etl": ["etl", "elt"],
+    "data warehouse": ["data warehouse", "dwh"],
+    "data lake": ["data lake", "lakehouse"],
+    "api": ["api", "rest api", "restful"],
 }
 
 
@@ -112,12 +137,12 @@ def extract_skills(title, tags, description=None) -> list[str]:
 
     text = " ".join(text_parts).lower()
 
-    found_skills = []
+    found_skills = set()
 
     for skill, keywords in SKILL_KEYWORDS.items():
         for keyword in keywords:
-            if keyword in text:
-                found_skills.append(skill)
+            if keyword.lower() in text:
+                found_skills.add(skill)
                 break
 
     return sorted(found_skills)
