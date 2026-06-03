@@ -8,6 +8,7 @@ import pandas as pd
 import requests
 from dotenv import load_dotenv
 from src.utils.quality import run_quality_checks, filter_required_fields
+from src.utils.s3 import upload_file_to_s3
 
 import logging
 
@@ -45,14 +46,18 @@ SKILL_KEYWORDS = {
 }
 
 
-def fetch_jobs():
+def fetch_jobs() -> dict:
+    logger.info("Fetching jobs from %s", API_URL)
+
     response = requests.get(API_URL, timeout=30)
     response.raise_for_status()
+
     data = response.json()
+
     return data
 
 
-def save_raw_json(data: dict):
+def save_raw_json(data: dict) -> Path:
     output_dir = Path("data/raw")
     output_dir.mkdir(parents=True, exist_ok=True)
 
@@ -63,6 +68,8 @@ def save_raw_json(data: dict):
         json.dump(data, f, indent=2, ensure_ascii=False)
 
     logger.info("Saved raw data to %s", file_path)
+
+    return file_path
 
 
 def safe_get(value, default=None):
@@ -150,7 +157,7 @@ def normalize_jobs(data: dict) -> pd.DataFrame:
     return df
 
 
-def save_processed_csv(df: pd.DataFrame) -> None:
+def save_processed_csv(df: pd.DataFrame) -> Path:
     output_dir = Path("data/processed")
     output_dir.mkdir(parents=True, exist_ok=True)
 
@@ -161,20 +168,48 @@ def save_processed_csv(df: pd.DataFrame) -> None:
 
     logger.info("Saved processed data to %s", file_path)
 
+    return file_path
 
-def main():
+
+def main() -> None:
     data = fetch_jobs()
-    save_raw_json(data)
+
+    raw_file_path = save_raw_json(data)
+
+    upload_file_to_s3(
+        raw_file_path,
+        f"raw/{raw_file_path.name}",
+    )
 
     df = normalize_jobs(data)
 
     run_quality_checks(df)
     df = filter_required_fields(df)
 
-    save_processed_csv(df)
+    logger.debug(
+        "Sample normalized jobs:\n%s",
+        df[
+            [
+                "title",
+                "company",
+                "location",
+                "remote",
+                "tags",
+                "skills",
+            ]
+        ].head(),
+    )
 
-    logger.debug("Sample normalized jobs:\n%s", df[["title", "company", "location", "remote", "tags", "skills"]].head())
     logger.info("Normalized jobs DataFrame shape: %s", df.shape)
+
+    processed_file_path = save_processed_csv(df)
+
+    upload_file_to_s3(
+        processed_file_path,
+        f"processed/{processed_file_path.name}",
+    )
+
+    logger.info("Pipeline finished successfully")
 
 
 if __name__ == "__main__":

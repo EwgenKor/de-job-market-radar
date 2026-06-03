@@ -20,7 +20,7 @@ S3_SECRET_KEY = os.getenv("S3_SECRET_KEY")
 
 def get_s3_client():
     if not all([S3_ENDPOINT, S3_ACCESS_KEY, S3_SECRET_KEY]):
-        raise ValueError("S34 config is not fully set in .env")
+        raise ValueError("S3 config is not fully set in .env")
 
     return boto3.client(
         "s3",
@@ -37,7 +37,7 @@ def upload_file_to_s3(local_file_path: Path, s3_key: str):
 
     s3_client = get_s3_client()
 
-    logger.info(
+    logger.debug(
         "Uploading %s to s3://%s/%s",
         local_file_path,
         S3_BUCKET,
@@ -58,6 +58,7 @@ def upload_file_to_s3(local_file_path: Path, s3_key: str):
         S3_BUCKET,
         s3_key,
         )
+        raise
 
 
     logger.info(
