@@ -25,6 +25,8 @@ load_dotenv()
 
 API_URL = os.getenv("ARBEITNOW_API_URL")
 
+SOURCE_NAME = "arbeitnow"
+
 if not API_URL:
     raise ValueError("ARBEITNOW_API_URL is not set")
 
@@ -89,7 +91,7 @@ def save_raw_json(data: dict) -> Path:
     file_name = f"jobs_raw_{datetime.now().date()}.json"
     file_path = output_dir / file_name
 
-    with open(file_path, "w") as f:
+    with open(file_path, "w", encoding="utf-8") as f:
         json.dump(data, f, indent=2, ensure_ascii=False)
 
     logger.info("Saved raw data to %s", file_path)
@@ -151,7 +153,7 @@ def extract_skills(title, tags, description=None) -> list[str]:
 def normalize_jobs(data: dict) -> pd.DataFrame:
     jobs = data.get("data", [])
 
-    normalize_jobs = []
+    normalized_jobs = []
 
     for job in jobs:
         title = safe_get(job.get("title"))
@@ -163,7 +165,7 @@ def normalize_jobs(data: dict) -> pd.DataFrame:
         created_at = safe_get(job.get("created_at"))
         description = safe_get(job.get("description"))
 
-        normalize_jobs.append(
+        normalized_jobs.append(
             {
                 "source": "arbeitnow",
                 "title": title,
@@ -197,13 +199,15 @@ def save_processed_csv(df: pd.DataFrame) -> Path:
 
 
 def main() -> None:
+    run_date = datetime.now().date()
+
     data = fetch_jobs()
 
     raw_file_path = save_raw_json(data)
 
     upload_file_to_s3(
         raw_file_path,
-        f"raw/{raw_file_path.name}",
+        f"raw/source={SOURCE_NAME}/dt={run_date}/{raw_file_path.name}",
     )
 
     df = normalize_jobs(data)
@@ -231,7 +235,7 @@ def main() -> None:
 
     upload_file_to_s3(
         processed_file_path,
-        f"processed/{processed_file_path.name}",
+        f"processed/source={SOURCE_NAME}/dt={run_date}/{processed_file_path.name}",
     )
 
     logger.info("Pipeline finished successfully")
