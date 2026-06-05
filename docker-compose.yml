@@ -15,5 +15,22 @@ services:
     volumes:
       - minio_data:/data
 
+  clickhouse:
+    image: clickhouse/clickhouse-server:latest
+    container_name: job-radar-clickhouse
+
+    ports:
+      - "8123:8123"
+      - "9002:9000"
+
+    environment:
+      CLICKHOUSE_DB: ${CLICKHOUSE_DB}
+      CLICKHOUSE_USER: ${CLICKHOUSE_USER}
+      CLICKHOUSE_PASSWORD: ${CLICKHOUSE_PASSWORD}
+
+    volumes:
+      - clickhouse_data:/var/lib/clickhouse
+
 volumes:
   minio_data:
+  clickhouse_data:
