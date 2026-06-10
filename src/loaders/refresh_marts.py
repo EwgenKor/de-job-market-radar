@@ -57,8 +57,58 @@ def refresh_skills_mart() -> None:
     logger.info("skills_mart refreshed successfully")
 
 
+def refresh_remote_mart() -> None:
+    client = get_clickhouse_client()
+
+    logger.info("Refreshing remote_mart...")
+
+    client.command("TRUNCATE TABLE job_radar.remote_mart")
+
+    client.command(
+        """
+        INSERT INTO job_radar.remote_mart
+        SELECT
+            if(remote = true, 'remote', 'non remote') AS work_format,
+            count() AS vacancies,
+            uniqExact(company) AS unique_companies
+        FROM job_radar.jobs
+        GROUP BY work_format;
+        """
+    )
+
+    logger.info("remote_mart refreshed successfully")
+
+
+def refresh_companies_mart() -> None:
+    client = get_clickhouse_client()
+
+    logger.info("Refreshing companies_mart...")
+
+    client.command("TRUNCATE TABLE job_radar.companies_mart")
+
+    client.command(
+        """
+        INSERT INTO job_radar.companies_mart
+        SELECT
+            company,
+            count() AS vacancies,
+            countIf(remote = true) AS remote_vacancies,
+            countIf(remote = false) AS non_remote_vacancies,
+            uniqExact(skill) AS unique_skills
+        FROM job_radar.jobs
+        ARRAY JOIN skills AS skill
+        WHERE company != ''
+        GROUP BY company;
+        """
+    )
+
+    logger.info("companies_mart refreshed successfully")
+
+
 def main() -> None:
     refresh_skills_mart()
+    refresh_remote_mart()
+    refresh_companies_mart()
 
 
 if __name__ == "__main__":
