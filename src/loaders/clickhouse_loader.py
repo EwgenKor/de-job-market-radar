@@ -2,7 +2,7 @@ import logging
 import os
 from datetime import datetime
 from pathlib import Path
-from src.utils.schema_validation import validate_and_cast_jobs_schema
+from src.utils.jobs_schema import validate_and_cast_jobs_schema
 
 import clickhouse_connect
 import pandas as pd
