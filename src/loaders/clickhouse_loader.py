@@ -1,7 +1,8 @@
-import ast
 import logging
 import os
+from datetime import datetime
 from pathlib import Path
+from src.utils.schema_validation import validate_and_cast_jobs_schema
 
 import clickhouse_connect
 import pandas as pd
@@ -34,61 +35,14 @@ def get_latest_processed_file() -> Path:
     return processed_files[-1]
 
 
-def parse_list_columns(value) -> list[str]:
-    if isinstance(value, list):
-        return value
-
-    if pd.isna(value):
-        return []
-
-    if isinstance(value, str):
-        try:
-            parsed = ast.literal_eval(value)
-        except (ValueError, SyntaxError):
-            logger.warning("Failed to parse %s", value)
-            return []
-
-        if isinstance(parsed, list):
-            return [str(item).strip() for item in parsed if str(item).strip()]
-
-    return []
-
-
 def load_jobs_from_csv(file_path: Path) -> pd.DataFrame:
     logger.info("Loading jobs from %s", file_path)
 
     df = pd.read_csv(file_path)
 
-    df["tags"] = df["tags"].apply(parse_list_columns)
-    df["skills"] = df["skills"].apply(parse_list_columns)
+    df["loaded_at"] = datetime.now()
 
-    string_columns = [
-        "source",
-        "title",
-        "company",
-        "location",
-        "url",
-        "created_at",
-        "description",
-    ]
-
-    for column in string_columns:
-        df[column] = df[column].astype("string")
-
-    df = df[
-        [
-            "source",
-            "title",
-            "company",
-            "location",
-            "remote",
-            "url",
-            "tags",
-            "skills",
-            "created_at",
-            "description",
-        ]
-    ]
+    df = validate_and_cast_jobs_schema(df)
 
     logger.info("Loaded %d jobs from CSV", len(df))
 
