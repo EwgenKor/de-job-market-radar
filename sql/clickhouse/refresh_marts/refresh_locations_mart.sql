@@ -1,3 +1,5 @@
+TRUNCATE TABLE job_radar.locations_mart;
+
 SELECT
     location,
     count() AS vacancies,

@@ -1,3 +1,6 @@
+ALTER TABLE job_radar.daily_snapshot_mart
+DELETE WHERE snapshot_date = today();
+
 SELECT
     today() AS snapshot_date,
     count() AS total_vacancies,

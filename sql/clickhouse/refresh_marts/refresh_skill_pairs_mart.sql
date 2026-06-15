@@ -1,4 +1,4 @@
-TRUNCATE TABLE job_radar.skill_pairs_mart
+TRUNCATE TABLE job_radar.skill_pairs_mart;
 
 
 INSERT INTO job_radar.skill_pairs_mart

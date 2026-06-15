@@ -1,5 +1,6 @@
 import logging
 import os
+from pathlib import Path
 
 import clickhouse_connect
 from dotenv import load_dotenv
@@ -20,6 +21,18 @@ CLICKHOUSE_USER = os.getenv("CLICKHOUSE_USER", "default")
 CLICKHOUSE_PASSWORD = os.getenv("CLICKHOUSE_PASSWORD", "")
 CLICKHOUSE_DATABASE = os.getenv("CLICKHOUSE_DATABASE", "job_radar")
 
+SQL_DIR = Path("sql/clickhouse/refresh_marts")
+
+REFRESH_SQL_FILES = [
+    "refresh_skills_mart.sql",
+    "refresh_remote_mart.sql",
+    "refresh_companies_mart.sql",
+    "refresh_locations_mart.sql",
+    "refresh_skill_pairs_mart.sql",
+    "refresh_daily_snapshot_mart.sql",
+    "refresh_daily_country_mart.sql",
+]
+
 
 def get_clickhouse_client():
     return clickhouse_connect.get_client(
@@ -31,189 +44,32 @@ def get_clickhouse_client():
     )
 
 
-def refresh_skills_mart(client) -> None:
-    logger.info("Refreshing skills_mart...")
+def run_sql_file(client, file_path: Path) -> None:
+    logger.info("Running SQL file %s", file_path)
 
-    client.command("TRUNCATE TABLE job_radar.skills_mart")
+    sql = file_path.read_text(encoding="utf-8")
 
-    client.command(
-        """
-        INSERT INTO job_radar.skills_mart
-        SELECT
-            skill,
-            count() AS vacancies,
-            countIf(remote = true) AS remote_vacancies,
-            countIf(remote = false) AS non_remote_vacancies,
-            uniqExact(company) AS unique_companies
-        FROM job_radar.jobs
-        ARRAY JOIN skills AS skill
-        WHERE skill != ''
-        GROUP BY skill;
-        """
-    )
+    statements = [
+        statement.strip()
+        for statement in sql.split(";")
+        if statement.strip()
+    ]
 
-    logger.info("skills_mart refreshed successfully")
+    for statement in statements:
+        client.command(statement)
 
-
-def refresh_remote_mart(client) -> None:
-    logger.info("Refreshing remote_mart...")
-
-    client.command("TRUNCATE TABLE job_radar.remote_mart")
-
-    client.command(
-        """
-        INSERT INTO job_radar.remote_mart
-        SELECT
-            if(remote = true, 'remote', 'non remote') AS work_format,
-            count() AS vacancies,
-            uniqExact(company) AS unique_companies
-        FROM job_radar.jobs
-        GROUP BY work_format;
-        """
-    )
-
-    logger.info("remote_mart refreshed successfully")
-
-
-def refresh_companies_mart(client) -> None:
-    logger.info("Refreshing companies_mart...")
-
-    client.command("TRUNCATE TABLE job_radar.companies_mart")
-
-    client.command(
-        """
-        INSERT INTO job_radar.companies_mart
-        SELECT
-            company,
-            count() AS vacancies,
-            countIf(remote = true) AS remote_vacancies,
-            countIf(remote = false) AS non_remote_vacancies,
-            uniqExact(skill) AS unique_skills
-        FROM job_radar.jobs
-        ARRAY JOIN skills AS skill
-        WHERE company != ''
-        GROUP BY company;
-        """
-    )
-
-    logger.info("companies_mart refreshed successfully")
-
-
-def refresh_locations_mart(client) -> None:
-    logger.info("Refreshing locations_mart")
-
-    client.command("TRUNCATE TABLE job_radar.locations_mart")
-
-    client.command(
-        """
-        INSERT INTO job_radar.locations_mart
-        SELECT
-            location,
-            count() AS vacancies,
-            countIf(remote = true) AS remote_vacancies,
-            countIf(remote = false) AS non_remote_vacancies,
-            uniqExact(company) AS unique_companies
-        FROM job_radar.jobs
-        WHERE location != ''
-        GROUP BY location
-        """
-    )
-
-
-def refresh_skill_pairs_mart(client) -> None:
-    logger.info("Refreshing skill_pairs_mart")
-
-    client.command("TRUNCATE TABLE job_radar.skill_pairs_mart")
-
-    client.command(
-        """
-        INSERT INTO job_radar.skill_pairs_mart
-        SELECT
-            skill_1,
-            skill_2,
-            count() AS vacancies,
-            countIf(remote = true) AS remote_vacancies,
-            uniqExact(company) AS unique_companies
-        FROM job_radar.jobs
-        ARRAY JOIN skills AS skill_1
-        ARRAY JOIN skills AS skill_2
-        WHERE skill_1 < skill_2
-        GROUP BY
-            skill_1,
-            skill_2
-        """
-    )
-
-
-def refresh_daily_snapshot_mart(client) -> None:
-    logger.info("Refreshing daily_snapshot_mart")
-
-    client.command(
-        """
-        ALTER TABLE job_radar.daily_snapshot_mart
-        DELETE WHERE snapshot_date = today()
-        """
-    )
-
-    client.command(
-        """
-        INSERT INTO job_radar.daily_snapshot_mart
-        SELECT
-            today() AS snapshot_date,
-            count() AS total_vacancies,
-            countIf(remote = true) AS remote_vacancies,
-            countIf(remote = false) AS non_remote_vacancies,
-            uniqExact(company) AS unique_companies,
-            uniqExact(skill) AS unique_skills
-        FROM job_radar.jobs
-        ARRAY JOIN skills AS skill
-        """
-    )
-
-
-def refresh_daily_country_mart(client) -> None:
-    logger.info("Refreshing daily_country_mart")
-
-    client.command(
-        """
-        ALTER TABLE job_radar.daily_country_mart
-        DELETE WHERE snapshot_date = today()
-        """
-    )
-
-    client.command(
-        """
-        INSERT INTO job_radar.daily_country_mart
-        SELECT
-            today() AS snapshot_date,
-            trim(splitByChar(',', location)[-1]) AS country,
-            count() AS vacancies,
-            countIf(remote = true) AS remote_vacancies,
-            countIf(remote = false) AS non_remote_vacancies,
-            uniqExact(company) AS unique_companies
-        FROM job_radar.jobs
-        WHERE location != ''
-        GROUP BY country
-        """
-    )
+    logger.info("SQL file executed successfully: %s", file_path)
 
 
 def refresh_all_marts(client) -> None:
-
-    refresh_skills_mart(client)
-    refresh_remote_mart(client)
-    refresh_companies_mart(client)
-    refresh_locations_mart(client)
-    refresh_skill_pairs_mart(client)
-    refresh_daily_snapshot_mart(client)
-    refresh_daily_country_mart(client)
+    for file_name in REFRESH_SQL_FILES:
+        run_sql_file(client, SQL_DIR / file_name)
 
 
 def main() -> None:
-
     client = get_clickhouse_client()
-
     refresh_all_marts(client)
+    logger.info("All Marts refreshed successfully")
 
 
 if __name__ == "__main__":

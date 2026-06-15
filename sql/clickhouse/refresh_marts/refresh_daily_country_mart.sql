@@ -1,3 +1,6 @@
+ALTER TABLE job_radar.daily_country_mart
+DELETE WHERE snapshot_date = today();
+
 SELECT
     today() AS snapshot_date,
     trim(splitByChar(',', location)[-1]) AS country,
