@@ -2,8 +2,7 @@ import logging
 import os
 from pathlib import Path
 
-import clickhouse_connect
-from dotenv import load_dotenv
+from src.utils.clickhouse import get_clickhouse_client
 
 
 logging.basicConfig(
@@ -12,14 +11,6 @@ logging.basicConfig(
 )
 
 logger = logging.getLogger(__name__)
-
-load_dotenv()
-
-CLICKHOUSE_HOST = os.getenv("CLICKHOUSE_HOST", "localhost")
-CLICKHOUSE_PORT = int(os.getenv("CLICKHOUSE_PORT", "8123"))
-CLICKHOUSE_USER = os.getenv("CLICKHOUSE_USER", "default")
-CLICKHOUSE_PASSWORD = os.getenv("CLICKHOUSE_PASSWORD", "")
-CLICKHOUSE_DATABASE = os.getenv("CLICKHOUSE_DATABASE", "job_radar")
 
 SQL_DIR = Path("sql/clickhouse/refresh_marts")
 
@@ -32,16 +23,6 @@ REFRESH_SQL_FILES = [
     "refresh_daily_snapshot_mart.sql",
     "refresh_daily_country_mart.sql",
 ]
-
-
-def get_clickhouse_client():
-    return clickhouse_connect.get_client(
-        host=CLICKHOUSE_HOST,
-        port=CLICKHOUSE_PORT,
-        username=CLICKHOUSE_USER,
-        password=CLICKHOUSE_PASSWORD,
-        database=CLICKHOUSE_DATABASE,
-    )
 
 
 def run_sql_file(client, file_path: Path) -> None:
