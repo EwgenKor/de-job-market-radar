@@ -75,13 +75,17 @@ def insert_jobs(df: pd.DataFrame) -> None:
     )
 
 
-def main():
+def run_loader() -> None:
     latest_file = get_latest_processed_file()
     df = load_jobs_from_csv(latest_file)
 
     insert_jobs(df)
 
     logger.info("Clickhouse loading finished successfully")
+
+
+def main() -> None:
+    run_loader()
 
 
 if __name__ == "__main__":

@@ -31,9 +31,28 @@ def get_s3_client():
     )
 
 
+def ensure_bucket_exists() -> None:
+    s3_client = get_s3_client()
+
+    existing_bucket = [
+        bucket["Name"]
+        for bucket in s3_client.list_buckets().get("Buckets", [])
+    ]
+
+    if S3_BUCKET in existing_bucket:
+        logger.info("Bucket %s already exists", S3_BUCKET)
+        return
+
+    s3_client.create_bucket(Bucket=S3_BUCKET)
+
+    logger.info("Created S3 bucket: %s", S3_BUCKET)
+
+
 def upload_file_to_s3(local_file_path: Path, s3_key: str):
     if S3_BUCKET is None:
         raise ValueError("S3_BUCKET is not set in .env")
+
+    ensure_bucket_exists()
 
     s3_client = get_s3_client()
 

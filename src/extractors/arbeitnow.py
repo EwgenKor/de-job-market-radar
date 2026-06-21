@@ -179,7 +179,7 @@ def normalize_jobs(data: dict) -> pd.DataFrame:
                 "description": description,
             }
         )
-    df = pd.DataFrame(normalize_jobs)
+    df = pd.DataFrame(normalized_jobs)
 
     return df
 
@@ -198,7 +198,7 @@ def save_processed_csv(df: pd.DataFrame) -> Path:
     return file_path
 
 
-def main() -> None:
+def run_extractor() -> None:
     run_date = datetime.now().date()
 
     data = fetch_jobs()
@@ -239,6 +239,10 @@ def main() -> None:
     )
 
     logger.info("Pipeline finished successfully")
+
+
+def main() -> None:
+    run_extractor()
 
 
 if __name__ == "__main__":
