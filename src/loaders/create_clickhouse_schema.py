@@ -1,10 +1,7 @@
 import logging
-import os
 from pathlib import Path
 
 from src.utils.clickhouse import get_clickhouse_client
-
-from dotenv import load_dotenv
 
 
 logging.basicConfig(
