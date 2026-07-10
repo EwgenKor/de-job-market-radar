@@ -1,6 +1,10 @@
 x-airflow-common:
   &airflow-common
-  image: ${AIRFLOW_IMAGE_NAME:-apache/airflow:2.9.3}
+  build:
+    context: .
+    dockerfile: Dockerfile.airflow
+  image: job-radar-airflow:2.9.3
+
   environment:
     &airflow-common-env
     AIRFLOW__CORE__EXECUTOR: LocalExecutor
@@ -10,14 +14,34 @@ x-airflow-common:
     AIRFLOW__CORE__LOAD_EXAMPLES: 'false'
     AIRFLOW__API__AUTH_BACKENDS: 'airflow.api.auth.backend.basic_auth,airflow.api.auth.backend.session'
     AIRFLOW__SCHEDULER__ENABLE_HEALTH_CHECK: 'true'
+
+    ARBEITNOW_API_URL: ${ARBEITNOW_API_URL}
+
+    S3_ENDPOINT: http://minio:9000
+    S3_BUCKET: ${S3_BUCKET}
+    S3_ACCESS_KEY: ${S3_ACCESS_KEY}
+    S3_SECRET_KEY: ${S3_SECRET_KEY}
+
+    CLICKHOUSE_HOST: clickhouse
+    CLICKHOUSE_PORT: 8123
+    CLICKHOUSE_USER: ${CLICKHOUSE_USER}
+    CLICKHOUSE_PASSWORD: ${CLICKHOUSE_PASSWORD}
+    CLICKHOUSE_DATABASE: ${CLICKHOUSE_DATABASE}
+    CLICKHOUSE_TABLE: ${CLICKHOUSE_TABLE}
+
+    PYTHONPATH: /opt/airflow/project
+
     _PIP_ADDITIONAL_REQUIREMENTS: ${_PIP_ADDITIONAL_REQUIREMENTS:-}
+
   volumes:
     - ${AIRFLOW_PROJ_DIR:-.}/dags:/opt/airflow/dags
     - ${AIRFLOW_PROJ_DIR:-.}/logs:/opt/airflow/logs
     - ${AIRFLOW_PROJ_DIR:-.}/config:/opt/airflow/config
     - ${AIRFLOW_PROJ_DIR:-.}/plugins:/opt/airflow/plugins
     - .:/opt/airflow/project
+
   user: "${AIRFLOW_UID:-50000}:0"
+
   depends_on:
     &airflow-common-depends-on
     postgres:
