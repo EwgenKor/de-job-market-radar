@@ -1,8 +1,12 @@
-from datetime import datetime, timedelta
+from datetime import timedelta
+
+import pendulum
 
 from airflow.decorators import dag
 from airflow.operators.bash import BashOperator
 
+
+LOCAL_TZ = pendulum.timezone("Europe/Podgorica")
 
 DEFAULT_ARGS = {
     "owner": "job_radar",
@@ -14,8 +18,8 @@ DEFAULT_ARGS = {
 @dag(
     dag_id="job_radar_pipeline",
     description="Extract, load and aggregate job market data",
-    start_date=datetime(2026, 6, 1),
-    schedule=None,
+    start_date=pendulum.datetime(2026, 7, 1, tz=LOCAL_TZ),
+    schedule="0 8 * * *",
     catchup=False,
     default_args=DEFAULT_ARGS,
     max_active_runs=1,
