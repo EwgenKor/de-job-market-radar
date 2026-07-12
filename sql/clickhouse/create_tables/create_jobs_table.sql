@@ -1,7 +1,5 @@
 CREATE DATABASE IF NOT EXISTS job_radar;
 
-DROP TABLE IF EXISTS job_radar.jobs;
-
 CREATE TABLE IF NOT EXISTS job_radar.jobs
 (
     source String,

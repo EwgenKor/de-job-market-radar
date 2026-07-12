@@ -1,14 +1,24 @@
-from datetime import datetime
+from datetime import datetime, timedelta
 
 from airflow.decorators import dag
 from airflow.operators.bash import BashOperator
 
 
+DEFAULT_ARGS = {
+    "owner": "job_radar",
+    "retries": 2,
+    "retry_delay": timedelta(minutes=2),
+}
+
+
 @dag(
     dag_id="job_radar_pipeline",
+    description="Extract, load and aggregate job market data",
     start_date=datetime(2026, 6, 1),
     schedule=None,
     catchup=False,
+    default_args=DEFAULT_ARGS,
+    max_active_runs=1,
     tags=["job_radar"],
 )
 def job_radar_pipeline_dag():
@@ -18,6 +28,7 @@ def job_radar_pipeline_dag():
             "cd /opt/airflow/project && "
             "python -m src.loaders.create_clickhouse_schema"
         ),
+        execution_timeout=timedelta(minutes=5),
     )
 
     extract_jobs = BashOperator(
@@ -26,6 +37,7 @@ def job_radar_pipeline_dag():
             "cd /opt/airflow/project && "
             "python -m src.extractors.arbeitnow"
         ),
+        execution_timeout=timedelta(minutes=10),
     )
 
     load_clickhouse = BashOperator(
@@ -34,6 +46,7 @@ def job_radar_pipeline_dag():
             "cd /opt/airflow/project && "
             "python -m src.loaders.clickhouse_loader"
         ),
+        execution_timeout=timedelta(minutes=10),
     )
 
     refresh_marts = BashOperator(
@@ -42,6 +55,7 @@ def job_radar_pipeline_dag():
             "cd /opt/airflow/project && "
             "python -m src.loaders.refresh_marts"
         ),
+        execution_timeout=timedelta(minutes=10),
     )
 
     create_schema >> extract_jobs >> load_clickhouse >> refresh_marts
