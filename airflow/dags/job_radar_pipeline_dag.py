@@ -39,7 +39,7 @@ def job_radar_pipeline_dag():
         task_id="extract_jobs",
         bash_command=(
             "cd /opt/airflow/project && "
-            "python -m src.extractors.arbeitnow"
+            "python -m src.extractors.e_arbeitnow"
         ),
         execution_timeout=timedelta(minutes=10),
     )

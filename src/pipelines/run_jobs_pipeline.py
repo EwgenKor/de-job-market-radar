@@ -1,6 +1,6 @@
 import logging
 
-from src.extractors.arbeitnow import run_extractor
+from src.extractors.e_arbeitnow import run_extractor
 from src.loaders.clickhouse_loader import run_loader
 from src.loaders.refresh_marts import main as refresh_marts
 
