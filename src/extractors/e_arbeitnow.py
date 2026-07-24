@@ -44,11 +44,11 @@ def fetch_jobs() -> dict:
     return data
 
 
-def save_raw_json(data: dict) -> Path:
+def save_raw_json(data: dict, run_date) -> Path:
     output_dir = Path("data/raw")
     output_dir.mkdir(parents=True, exist_ok=True)
 
-    file_name = f"jobs_raw_{datetime.now().date()}.json"
+    file_name = f"jobs_raw_{run_date}.json"
     file_path = output_dir / file_name
 
     with open(file_path, "w", encoding="utf-8") as f:
@@ -59,11 +59,11 @@ def save_raw_json(data: dict) -> Path:
     return file_path
 
 
-def save_processed_csv(df: pd.DataFrame) -> Path:
+def save_processed_csv(df: pd.DataFrame, run_date) -> Path:
     output_dir = Path("data/processed")
     output_dir.mkdir(parents=True, exist_ok=True)
 
-    file_name = f"jobs_normalized_{datetime.now().date()}.csv"
+    file_name = f"jobs_normalized_{run_date}.csv"
     file_path = output_dir / file_name
 
     df.to_csv(file_path, index=False, encoding="utf-8")
@@ -84,7 +84,7 @@ def run_extractor() -> pd.DataFrame:
 
     data = fetch_jobs()
 
-    raw_file_path = save_raw_json(data)
+    raw_file_path = save_raw_json(data=data, run_date=run_date)
 
     upload_file_to_s3(
         raw_file_path,
@@ -117,7 +117,7 @@ def run_extractor() -> pd.DataFrame:
 
     logger.info("Normalized jobs DataFrame shape: %s", df.shape)
 
-    processed_file_path = save_processed_csv(df)
+    processed_file_path = save_processed_csv(df=df, run_date=run_date)
 
     upload_file_to_s3(
         processed_file_path,
