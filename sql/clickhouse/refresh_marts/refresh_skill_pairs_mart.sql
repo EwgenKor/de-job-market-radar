@@ -1,6 +1,5 @@
 TRUNCATE TABLE job_radar.skill_pairs_mart;
 
-
 INSERT INTO job_radar.skill_pairs_mart
 SELECT
     skill_1,

@@ -73,7 +73,7 @@ def save_processed_csv(df: pd.DataFrame) -> Path:
     return file_path
 
 
-def run_extractor() -> None:
+def run_extractor() -> pd.DataFrame:
     extracted_at = datetime.now(timezone.utc)
     run_date = extracted_at.date()
 
@@ -125,6 +125,8 @@ def run_extractor() -> None:
     )
 
     logger.info("Arbeitnow extraction and normalization finished successfully")
+
+    return df
 
 
 def main() -> None:

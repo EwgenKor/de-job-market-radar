@@ -1,5 +1,5 @@
 import logging
-from datetime import datetime
+from datetime import datetime, timezone
 from pathlib import Path
 
 import pandas as pd
@@ -10,7 +10,7 @@ from src.utils.jobs_schema import validate_and_cast_jobs_schema
 
 logging.basicConfig(
     level=logging.INFO,
-    format="%(asctime)s | %(levelname)s | %(name)s | %(message)s"
+    format="%(asctime)s | %(levelname)s | %(name)s | %(message)s",
 )
 
 logger = logging.getLogger(__name__)
@@ -25,18 +25,24 @@ def get_latest_processed_file() -> Path:
     return processed_files[-1]
 
 
+def prepare_jobs_for_loading(df: pd.DataFrame) -> pd.DataFrame:
+    prepared_df = df.copy()
+
+    prepared_df["loaded_at"] = datetime.now(timezone.utc)
+
+    prepared_df = validate_and_cast_jobs_schema(prepared_df)
+
+    logger.info("Prepared %d jobs for ClickHouse loading",len(prepared_df))
+
+    return prepared_df
+
+
 def load_jobs_from_csv(file_path: Path) -> pd.DataFrame:
     logger.info("Loading jobs from %s", file_path)
 
     df = pd.read_csv(file_path)
 
-    df["loaded_at"] = datetime.now()
-
-    df = validate_and_cast_jobs_schema(df)
-
-    logger.info("Loaded %d jobs from CSV", len(df))
-
-    return df
+    return prepare_jobs_for_loading(df)
 
 
 def insert_jobs(df: pd.DataFrame) -> None:
@@ -53,11 +59,16 @@ def insert_jobs(df: pd.DataFrame) -> None:
     )
 
 
-def run_loader() -> None:
-    latest_file = get_latest_processed_file()
-    df = load_jobs_from_csv(latest_file)
+def run_loader(df: pd.DataFrame | None = None) -> None:
+    if df is None:
+        latest_file = get_latest_processed_file()
+        prepared_df = load_jobs_from_csv(latest_file)
+    else:
+        logger.info("Loading jobs directly from DataFrame")
 
-    insert_jobs(df)
+        prepared_df = prepare_jobs_for_loading(df)
+
+    insert_jobs(prepared_df)
 
     logger.info("ClickHouse loading finished successfully")
 
