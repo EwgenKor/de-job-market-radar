@@ -17,7 +17,7 @@ DEFAULT_ARGS = {
 
 @dag(
     dag_id="job_radar_pipeline",
-    description="Extract, load and aggregate job market data",
+    description="Run the complete Job Radar data pipeline",
     start_date=pendulum.datetime(2026, 7, 1, tz=LOCAL_TZ),
     schedule="0 8 * * *",
     catchup=False,
@@ -35,34 +35,16 @@ def job_radar_pipeline_dag():
         execution_timeout=timedelta(minutes=5),
     )
 
-    extract_jobs = BashOperator(
-        task_id="extract_jobs",
+    run_pipeline = BashOperator(
+        task_id="run_jobs_pipeline",
         bash_command=(
             "cd /opt/airflow/project && "
-            "python -m src.extractors.e_arbeitnow"
+            "python -m src.pipelines.run_jobs_pipeline"
         ),
-        execution_timeout=timedelta(minutes=10),
+        execution_timeout=timedelta(minutes=20),
     )
 
-    load_clickhouse = BashOperator(
-        task_id="load_clickhouse",
-        bash_command=(
-            "cd /opt/airflow/project && "
-            "python -m src.loaders.clickhouse_loader"
-        ),
-        execution_timeout=timedelta(minutes=10),
-    )
-
-    refresh_marts = BashOperator(
-        task_id="refresh_marts",
-        bash_command=(
-            "cd /opt/airflow/project && "
-            "python -m src.loaders.refresh_marts"
-        ),
-        execution_timeout=timedelta(minutes=10),
-    )
-
-    create_schema >> extract_jobs >> load_clickhouse >> refresh_marts
+    create_schema >> run_pipeline
 
 
 job_radar_pipeline_dag()
