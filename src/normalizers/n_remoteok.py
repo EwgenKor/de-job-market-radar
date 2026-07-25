@@ -7,7 +7,7 @@ from src.normalizers.common import (
 )
 
 
-SOURCE_NAME = "arbeitnow"
+SOURCE_NAME = "remoteok"
 
 
 SKILL_KEYWORDS = {
@@ -103,30 +103,30 @@ def extract_skills(title, tags, description=None) -> list[str]:
     return sorted(found_skills)
 
 
-def normalize_arbeitnow_jobs(
-    data: dict,
+def normalize_remoteok_jobs(
+    data: list[dict],
     batch_id: str,
     extracted_at,
 ) -> pd.DataFrame:
 
-    jobs = data.get("data", [])
+    jobs = [job for job in data if isinstance(job, dict) and "id" in job]
 
     normalized_jobs = []
 
     for job in jobs:
-        title = safe_get(job.get("title"))
-        company = safe_get(job.get("company_name"))
+        title = safe_get(job.get("position"))
+        company = safe_get(job.get("company"))
         location_raw = safe_get(job.get("location"))
-        remote = job.get("remote")
+        remote = True
         raw_url = safe_get(job.get("url"))
         url = normalize_url(raw_url)
         tags = normalize_tags(job.get("tags"))
-        created_at = safe_get(job.get("created_at"))
+        created_at = safe_get(job.get("date"))
         description = safe_get(job.get("description"))
 
         source_job_id = generate_source_job_id(
             source=SOURCE_NAME,
-            source_job_id=job.get("slug"),
+            source_job_id=job.get("id"),
             url=url,
         )
 

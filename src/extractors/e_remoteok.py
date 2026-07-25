@@ -8,9 +8,10 @@ from pathlib import Path
 import pandas as pd
 import requests
 from dotenv import load_dotenv
+
 from src.utils.quality import run_quality_checks, filter_required_fields
 from src.utils.s3 import upload_file_to_s3
-from src.normalizers.n_arbeitnow import normalize_arbeitnow_jobs
+from src.normalizers.n_remoteok import normalize_remoteok_jobs
 from src.normalizers.common import build_batch_id
 
 
@@ -24,40 +25,39 @@ logger = logging.getLogger(__name__)
 
 load_dotenv()
 
-API_URL = os.getenv("ARBEITNOW_API_URL")
+API_URL = os.getenv("REMOTEOK_API_URL")
 
-SOURCE_NAME = "arbeitnow"
+SOURCE_NAME = "remoteok"
 
 if not API_URL:
-    raise ValueError("ARBEITNOW_API_URL is not set")
+    raise ValueError("REMOTEOK_API_URL is not set")
 
 
-def fetch_jobs() -> dict:
+def fetch_jobs() -> list[dict]:
     logger.info("Fetching jobs from %s", API_URL)
 
-    response = requests.get(API_URL, timeout=30)
+    response = requests.get(
+        API_URL,
+        timeout=30,
+        headers={"User-Agent": "JobRadar/1.0"},
+    )
     response.raise_for_status()
 
     data = response.json()
 
-    if not isinstance(data, dict):
+    if not isinstance(data, list):
         raise ValueError(
-            "Unexpected Arbeitnow response: expected a dict"
-        )
-
-    if "data" not in data:
-        raise ValueError(
-            "Unexpected Arbeitnow response: missing 'data' field"
+            "Unexpected RemoteOK response: expected a list"
         )
 
     return data
 
 
-def save_raw_json(data: dict, run_date) -> Path:
+def save_raw_json(data: list[dict], run_date) -> Path:
     output_dir = Path("data/raw")
     output_dir.mkdir(parents=True, exist_ok=True)
 
-    file_name = f"jobs_raw_{run_date}.json"
+    file_name = f"jobs_raw_{SOURCE_NAME}_{run_date}.json"
     file_path = output_dir / file_name
 
     with open(file_path, "w", encoding="utf-8") as f:
@@ -72,7 +72,7 @@ def save_processed_csv(df: pd.DataFrame, run_date) -> Path:
     output_dir = Path("data/processed")
     output_dir.mkdir(parents=True, exist_ok=True)
 
-    file_name = f"jobs_normalized_{run_date}.csv"
+    file_name = f"jobs_normalized_{SOURCE_NAME}_{run_date}.csv"
     file_path = output_dir / file_name
 
     df.to_csv(file_path, index=False, encoding="utf-8")
@@ -100,7 +100,7 @@ def run_extractor() -> pd.DataFrame:
         f"raw/source={SOURCE_NAME}/dt={run_date}/{raw_file_path.name}",
     )
 
-    df = normalize_arbeitnow_jobs(
+    df = normalize_remoteok_jobs(
         data=data,
         batch_id=batch_id,
         extracted_at=extracted_at,
@@ -133,7 +133,7 @@ def run_extractor() -> pd.DataFrame:
         f"processed/source={SOURCE_NAME}/dt={run_date}/{processed_file_path.name}",
     )
 
-    logger.info("Arbeitnow extraction and normalization finished successfully")
+    logger.info("RemoteOK extraction and normalization finished successfully")
 
     return df
 
