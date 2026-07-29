@@ -2,6 +2,7 @@ import logging
 
 from src.extractors.e_arbeitnow import run_extractor as run_arbeitnow
 from src.extractors.e_remoteok import run_extractor as run_remoteok
+from src.extractors.e_jooble import run_extractor as run_jooble
 from src.loaders.clickhouse_loader import run_loader
 from src.loaders.refresh_marts import main as refresh_marts
 from src.pipelines.combine_normalized_batches import combine_normalized_batches
@@ -22,6 +23,7 @@ def run_jobs_pipeline() -> None:
     normalized_batches = [
         run_arbeitnow(),
         run_remoteok(),
+        run_jooble(),
     ]
 
     logger.info("Step 2/4: Combine normalized batches")
