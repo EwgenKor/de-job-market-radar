@@ -15,3 +15,4 @@ s3transfer==0.18.0
 six==1.17.0
 urllib3==2.6.3
 zstandard==0.25.0
+pytest==9.1.1

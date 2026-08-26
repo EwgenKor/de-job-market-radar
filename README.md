@@ -481,6 +481,37 @@ The dashboard deliberately reads analytical marts rather than rebuilding analyti
 
 ---
 
+---
+
+# Tests
+
+Focused unit tests cover core deterministic logic:
+
+- URL normalization;
+- tracking-parameter removal;
+- deterministic fallback `source_job_id`;
+- country normalization;
+- `batch_id` generation;
+- multi-source DataFrame combination;
+- empty-batch handling;
+- exact source-level deduplication;
+- exact cross-source URL deduplication.
+
+Run:
+
+```bash
+uv run pytest -q
+```
+
+Current result:
+
+```text
+11 passed
+```
+
+The test suite intentionally focuses on pure core logic first; broader integration testing is a post-v1 improvement.
+
+
 # Tech Stack
 
 ## Data Engineering
@@ -516,6 +547,10 @@ The dashboard deliberately reads analytical marts rather than rebuilding analyti
 
 - Apache Superset
 
+## Testing
+
+- pytest
+
 ## Development
 
 - uv
@@ -542,12 +577,13 @@ de_job_radar/
 │   └── sample/
 │
 ├── docs/
+│   ├── architecture.md
+│   ├── roadmap.md
+│   ├── PORTFOLIO.md
 │   ├── images/
 │   │   └── job_radar_market_overview.png
-│   ├── troubleshooting/
-│   ├── architecture.md
-│   ├── CURRENT_STATE.md
-│   └── roadmap.md
+│   └── checkpoints/
+│       └── 2026-08-02_v1.0.0_release.md
 │
 ├── sql/
 │   ├── basic_analysis.sql
@@ -581,6 +617,12 @@ de_job_radar/
 │       ├── jobs_schema.py
 │       ├── quality.py
 │       └── s3.py
+│
+├── tests/
+│   ├── conftest.py
+│   ├── test_common.py
+│   ├── test_combine_normalized_batches.py
+│   └── test_s3.py
 │
 ├── Dockerfile.airflow
 ├── docker-compose.yml
@@ -724,6 +766,18 @@ The project currently does not use extractor factories, inheritance hierarchies,
 
 ---
 
+---
+
+# Documentation
+
+Public project documentation:
+
+- [Architecture](docs/architecture.md)
+- [Portfolio Overview](docs/PORTFOLIO.md)
+- [Roadmap](docs/roadmap.md)
+- [v1.0.0 Release Checkpoint](docs/checkpoints/2026-08-02_v1.0.0_release.md)
+
+
 # Roadmap
 
 Version `v1.0.0` represents the first complete portfolio-ready release.
@@ -749,8 +803,8 @@ Main future directions include:
 
 # Status
 
-**v1.0.0 — portfolio-ready release candidate**
+**v1.0.0 — released / portfolio-ready**
 
-The core Data Engineering pipeline and first analytical dashboard are complete.
+The first stable Job RADAR release is complete, tagged, and published.
 
-The project is ready to be tagged as `v1.0.0` after final documentation and release checks.
+Future work starts from the post-v1 roadmap rather than unfinished MVP scope.
